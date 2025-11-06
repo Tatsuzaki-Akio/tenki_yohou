@@ -1,0 +1,78 @@
+import customtkinter as ctk
+import requests
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+API_KEY = os.getenv("WEATHER_API_KEY")
+
+
+def get_weather(city):
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric&lang=ja"
+        res = requests.get(url)
+        data = res.json()
+
+        if data["cod"] != 200:
+            return {"error": "都市名が見つかりません。"}
+
+        weather = data["weather"][0]["description"]
+        temp = data["main"]["temp"]
+        humidity = data["main"]["humidity"]
+
+        return {"weather": weather, "temp": temp, "humidity": humidity}
+
+    except Exception as e:
+        return {"error": f"エラーが発生しました: {e}"}
+
+
+def show_weather():
+    city = entry.get()
+    if not city:
+        result_label.configure(text="都市名を入力してください")
+        return
+
+    result = get_weather(city)
+
+    if "error" in result:
+        result_label.configure(text=result["error"])
+
+    else:
+        result_label.configure(
+            text=(
+                "現在の天気\n"
+                f"天気:{result['weather']}\n"
+                f"気温:{result['temp']}℃\n"
+                f"湿度:{result['humidity']}%"
+            )
+        )
+
+
+# def get_tomorrow_weather(city):
+#     try:
+#         url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric&lang=ja"
+#         res = requests.get(url)
+#         data = res.json()
+
+#         if data["cod"] != 200:
+#             return {"error":f"データが見つかりません"}
+
+
+ctk.set_appearance_mode("dark")
+root = ctk.CTk()
+root.title("天気予報アプリ")
+root.geometry("300x300")
+
+title_label = ctk.CTkLabel(root, text="天気予報アプリ")
+title_label.pack(pady=10)
+
+entry = ctk.CTkEntry(root, placeholder_text="都市名を入力（例：Tokyo）", width=200)
+entry.pack(pady=10)
+
+btn = ctk.CTkButton(root, text="検索", command=show_weather)
+btn.pack(pady=10)
+
+result_label = ctk.CTkLabel(root, text="")
+result_label.pack(pady=20)
+
+root.mainloop()
